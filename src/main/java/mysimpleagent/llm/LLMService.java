@@ -1,27 +1,23 @@
 package mysimpleagent.llm;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import mysimpleagent.Config;
 import mysimpleagent.http.HttpValidator;
 import mysimpleagent.llm.chatcompletions.ChatResponse;
 import mysimpleagent.llm.chatcompletions.LLMChatCompletionsStreamResponseParser;
-import mysimpleagent.llm.chatcompletions.payloads.*;
+import mysimpleagent.llm.chatcompletions.payloads.LLMChatCompletionMessage;
+import mysimpleagent.llm.chatcompletions.payloads.LLMChatCompletionPayload;
 import mysimpleagent.llm.chatcompletions.stream.LLMChatCompletionsStreamChoiceDeltaToolCall;
 import mysimpleagent.llm.chatcompletions.stream.LLMChatCompletionsStreamChoiceDeltaToolCallFunction;
 import mysimpleagent.llm.chatcompletions.stream.LLMChatCompletionsStreamResponseEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -149,15 +145,12 @@ public class LLMService {
                             String previousToolFinalArgs = toolArgsBuilder.toString();
                             toolArgsBuilder.setLength(0);
 
-                            //FIXME why this tool call ID is wrong or being overwritten?
                             var finalToolCall = new LLMChatCompletionsStreamChoiceDeltaToolCall(currentToolCall.index(), currentToolCall.id(), currentToolCall.type(), new LLMChatCompletionsStreamChoiceDeltaToolCallFunction(currentToolCall.function().name(), previousToolFinalArgs));
                             toolCalls.add(finalToolCall);
                             currentToolCall = toolCall;
                         }
 
                         System.out.printf("- [%s] Tool Call: %s ", toolCall.id(), toolCall.function().name());
-                        //TODO add the new function tool call to a list of tool calls for the response caller
-                        //     to be able to see/prompt back or the agent to call it
                     } else {
                         System.out.print(toolCall.function().arguments());
                         toolArgsBuilder.append(toolCall.function().arguments());
@@ -182,7 +175,6 @@ public class LLMService {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(uri)
-//                .header("Accept", "application/json")
                 .header("Accept", "text/event-stream")
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(payloadStr))
@@ -196,32 +188,32 @@ public class LLMService {
         return request;
     }
 
-    private String callWriteTool(String arguments) {
-        logger.atInfo()
-                .addKeyValue("arguments", arguments)
-                .log("calling write tool...");
-
-        record Args(
-                @JsonProperty("output_file_path") String outputFilePath,
-                String contents
-        ){}
-
-        Args args = this.objectMapper.readValue(arguments, new TypeReference<>(){});
-
-        try {
-            Files.writeString(Path.of(args.outputFilePath), args.contents);
-            return "arquivo escrito com sucesso";
-        } catch (IOException e) {
-            logger.atError().setCause(e).log("write falhou");
-            return e.toString();
-        }
-    }
-
-    private LLMChatCompletionResponse parseResponse(HttpResponse<InputStream> response) throws IOException {
-        try (InputStream is = response.body()) {
-            return this.objectMapper.readValue(is, new TypeReference<>() {});
-        }
-    }
+//    private String callWriteTool(String arguments) {
+//        logger.atInfo()
+//                .addKeyValue("arguments", arguments)
+//                .log("calling write tool...");
+//
+//        record Args(
+//                @JsonProperty("output_file_path") String outputFilePath,
+//                String contents
+//        ){}
+//
+//        Args args = this.objectMapper.readValue(arguments, new TypeReference<>(){});
+//
+//        try {
+//            Files.writeString(Path.of(args.outputFilePath), args.contents);
+//            return "arquivo escrito com sucesso";
+//        } catch (IOException e) {
+//            logger.atError().setCause(e).log("write falhou");
+//            return e.toString();
+//        }
+//    }
+//
+//    private LLMChatCompletionResponse parseResponse(HttpResponse<InputStream> response) throws IOException {
+//        try (InputStream is = response.body()) {
+//            return this.objectMapper.readValue(is, new TypeReference<>() {});
+//        }
+//    }
 
     public String getModelName() {
         return this.config.getLlmModelName();

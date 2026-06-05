@@ -95,18 +95,19 @@ public class App {
             while (chatResponse.hasToolCalls()) {
                 System.out.print("Tool Calls are pending. Allow? [Y/n] ");
                 String answer = input.nextLine().trim().toLowerCase();
-                if (answer.isEmpty() || answer.equals("y") || answer.equals("yes")) {
-                    try {
-                        toolService.callTools(messages, chatResponse.toolCalls());
-                        chatResponse = llmService.chatToolsBack(messages);
-                        //TODO tool responses are added to messages. send it back to the llm
-                    } catch (Exception e) {
-                        //FIXME improve this
-                        throw new RuntimeException(e);
-                    }
+                boolean proceed = answer.isEmpty() || answer.equals("y") || answer.equals("yes");
+                if (!proceed) {
+                    break;
+                }
+
+                try {
+                    toolService.callTools(messages, chatResponse.toolCalls());
+                    chatResponse = llmService.chatToolsBack(messages);
+                } catch (Exception e) {
+                    //TODO improve this
+                    throw new RuntimeException(e);
                 }
             }
-
         }
     }
 }
