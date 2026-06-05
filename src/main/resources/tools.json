@@ -2,25 +2,78 @@
   {
     "type": "function",
     "function": {
-      "name": "get_current_weather",
-      "description": "Get the current weather in a given location",
+      "name": "read",
+      "description": "Read the contents of a file. Supports text files only. Images are not supported. For text files, output is truncated to ${DEFAULT_MAX_LINES} lines or ${DEFAULT_MAX_BYTES / 1024}KB (whichever is hit first). Use offset/limit for large files. When you need the full file, continue with offset until complete.",
       "parameters": {
         "type": "object",
+        "required": [
+          "path"
+        ],
         "properties": {
-          "location": {
+          "path": {
             "type": "string",
-            "description": "The city and country e.g. Bogotá, Colombia"
+            "description": "Path to the file to read (relative or absolute)"
           },
-          "unit": {
-            "type": "string",
-            "enum": ["celsius", "fahrenheit"],
-            "description": "Units the temperature will be returned in."
+          "offset": {
+            "type": "number",
+            "description": "Line number to start reading from (1-indexed)"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Maximum number of lines to read"
           }
-        },
-        "required": ["location", "units"],
-        "additionalProperties": false
-      }
-    },
-    "strict": true
+        }
+      },
+      "strict": false
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "bash",
+      "description": "Execute a bash command in the current working directory. Returns stdout and stderr. Output is truncated to last ${DEFAULT_MAX_LINES} lines or ${DEFAULT_MAX_BYTES / 1024}KB (whichever is hit first). If truncated, full output is saved to a temp file. Optionally provide a timeout in seconds.",
+      "parameters": {
+        "type": "object",
+        "required": [
+          "command"
+        ],
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "Bash command to execute"
+          },
+          "timeout": {
+            "type": "number",
+            "description": "Timeout in seconds (optional, no default timeout)"
+          }
+        }
+      },
+      "strict": false
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "write",
+      "description": "Write content to a file. Creates the file if it doesn't exist, overwrites if it does. Automatically creates parent directories.",
+      "parameters": {
+        "type": "object",
+        "required": [
+          "path",
+          "content"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Path to the file to write (relative or absolute)"
+          },
+          "content": {
+            "type": "string",
+            "description": "Content to write to the file"
+          }
+        }
+      },
+      "strict": false
+    }
   }
 ]

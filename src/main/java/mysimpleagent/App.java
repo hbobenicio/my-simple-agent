@@ -8,6 +8,8 @@ import mysimpleagent.tools.ToolService;
 import mysimpleagent.tools.ToolsLoader;
 import mysimpleagent.tools.Toolset;
 import mysimpleagent.tools.functions.GetCurrentWeather;
+import mysimpleagent.tools.functions.ToolRead;
+import mysimpleagent.tools.functions.ToolWrite;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.jackson.databind.ObjectMapper;
@@ -34,10 +36,10 @@ public class App {
         List<Object> tools = toolsLoader.loadToolsFromResources();
 
         // Tools
-        var getCurrentWeather = new GetCurrentWeather(objectMapper);
-        var toolset =  new Toolset(
-                getCurrentWeather
-        );
+//        var getCurrentWeather = new GetCurrentWeather(objectMapper);
+        var toolWrite = new ToolWrite(objectMapper);
+        var toolRead = new ToolRead(objectMapper);
+        var toolset = new Toolset(toolWrite, toolRead);
         var toolService = new ToolService(toolset);
 
         var respParser = new LLMChatCompletionsStreamResponseParser(objectMapper);
@@ -64,7 +66,7 @@ public class App {
 
             final String prompt;
             try {
-                prompt = input.nextLine().trim().toLowerCase();
+                prompt = input.nextLine().trim();
             } catch (NoSuchElementException e) {
                 logger.atDebug().setCause(e).log("EOF: no more lines do read");
                 break;

@@ -7,7 +7,7 @@ import tools.jackson.databind.ObjectMapper;
 
 public class GetCurrentWeather implements Tool {
 
-    private static record Args(
+    private record Args(
             String location,
             String unit
     ) {}
