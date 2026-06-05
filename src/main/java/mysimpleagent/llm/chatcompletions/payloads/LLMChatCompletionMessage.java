@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+import java.util.List;
+
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
         include = JsonTypeInfo.As.EXISTING_PROPERTY,
@@ -11,6 +13,10 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         visible = true
 )
 @JsonSubTypes({
+        @JsonSubTypes.Type(
+                value = LLMChatCompletionMessage.LLMChatCompletionMessageAssistant.class,
+                name = "assistant"
+        ),
         @JsonSubTypes.Type(
                 value = LLMChatCompletionMessage.LLMChatCompletionMessageTool.class,
                 name = "tool"
@@ -31,16 +37,25 @@ public class LLMChatCompletionMessage {
         this.content = content;
     }
 
+    public static class LLMChatCompletionMessageAssistant extends LLMChatCompletionMessage {
+
+        @JsonProperty("tool_calls")
+        public List<LLMChatCompletionTool> toolCalls;
+
+        public LLMChatCompletionMessageAssistant(String content, List<LLMChatCompletionTool> toolCalls) {
+            super("assistant", content);
+            this.toolCalls = toolCalls;
+        }
+    }
+
     public static class LLMChatCompletionMessageTool extends LLMChatCompletionMessage {
+
         @JsonProperty("tool_call_id")
         public String toolCallId;
 
-        public String content;
-
         public LLMChatCompletionMessageTool(String toolCallId, String content) {
-            super("tool");
+            super("tool", content);
             this.toolCallId = toolCallId;
-            this.content = content;
         }
     }
 }

@@ -6,6 +6,8 @@ import mysimpleagent.llm.chatcompletions.ChatResponse;
 import mysimpleagent.llm.chatcompletions.LLMChatCompletionsStreamResponseParser;
 import mysimpleagent.llm.chatcompletions.payloads.LLMChatCompletionMessage;
 import mysimpleagent.llm.chatcompletions.payloads.LLMChatCompletionPayload;
+import mysimpleagent.llm.chatcompletions.payloads.LLMChatCompletionTool;
+import mysimpleagent.llm.chatcompletions.payloads.LLMChatCompletionToolFunction;
 import mysimpleagent.llm.chatcompletions.stream.LLMChatCompletionsStreamChoiceDeltaToolCall;
 import mysimpleagent.llm.chatcompletions.stream.LLMChatCompletionsStreamChoiceDeltaToolCallFunction;
 import mysimpleagent.llm.chatcompletions.stream.LLMChatCompletionsStreamResponseEvent;
@@ -160,6 +162,19 @@ public class LLMService {
         }
         String finalReasoning = reasoningStringBuilder.toString();
         String finalMessage = messageStringBuilder.toString();
+        // add the tool calls to the chat history
+        for (var toolCall: toolCalls) {
+            //TODO improve this. Models are duplicated... deltas and chat message payloads
+            List<LLMChatCompletionTool> chatToolCalls = new ArrayList<>();
+            var chatToolCallMsg = new LLMChatCompletionTool(toolCall.id(), toolCall.type(), new LLMChatCompletionToolFunction(
+                    toolCall.function().name(),
+                    null,  // description... needed?
+                    toolCall.function().arguments()
+            ));
+            chatToolCalls.add(chatToolCallMsg);
+            var assistantMsg = new LLMChatCompletionMessage.LLMChatCompletionMessageAssistant(null, chatToolCalls);
+            messages.add(assistantMsg);
+        }
         return new ChatResponse(finalReasoning, finalMessage, toolCalls);
     }
 
@@ -224,7 +239,9 @@ public class LLMService {
     }
 
     public ChatResponse chatToolsBack(List<LLMChatCompletionMessage> messages) throws IOException, InterruptedException {
-        messages.add(new LLMChatCompletionMessage("assistant", "here are the tools results. now formulate a final response to the user"));
+        //FIXME probably not correct. What if the user instructs the model to call a tool then another one...
+        //      can this mess the behaviour of it?
+//        messages.add(new LLMChatCompletionMessage("assistant", "here are the tools results. now formulate a final response to the user"));
         return doChat(messages);
     }
 }
