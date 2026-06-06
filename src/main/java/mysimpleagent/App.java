@@ -7,6 +7,7 @@ import mysimpleagent.llm.chatcompletions.payloads.LLMChatCompletionMessage;
 import mysimpleagent.tools.ToolService;
 import mysimpleagent.tools.ToolsLoader;
 import mysimpleagent.tools.Toolset;
+import mysimpleagent.tools.functions.ToolBash;
 import mysimpleagent.tools.functions.ToolRead;
 import mysimpleagent.tools.functions.ToolWrite;
 import org.jline.reader.LineReader;
@@ -42,7 +43,8 @@ public class App {
         // Tools
         var toolWrite = new ToolWrite(objectMapper);
         var toolRead = new ToolRead(objectMapper);
-        var toolset = new Toolset(toolWrite, toolRead);
+        var toolBash = new ToolBash(objectMapper);
+        var toolset = new Toolset(toolWrite, toolRead, toolBash);
         var toolService = new ToolService(toolset);
 
         var respParser = new LLMChatCompletionsStreamResponseParser(objectMapper);
