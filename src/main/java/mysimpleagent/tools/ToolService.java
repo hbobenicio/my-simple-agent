@@ -22,24 +22,25 @@ public class ToolService {
     ) throws Exception {
         //TODO implement tool calls limit
         var toolCallsCount = 0;
-        for (var tool: toolCalls) {
-            logger.atInfo()
-                    .addKeyValue("id", tool.id())
-                    .addKeyValue("type", tool.type())
-                    .addKeyValue("name", tool.function().name())
-                    .addKeyValue("args", tool.function().arguments())
+        for (var toolCall: toolCalls) {
+            logger.atDebug()
+                    .addKeyValue("id", toolCall.id())
+                    .addKeyValue("type", toolCall.type())
+                    .addKeyValue("name", toolCall.function().name())
+                    .addKeyValue("args", toolCall.function().arguments())
                     .log("calling tool...");
 
-            var func = tool.function();
-            String toolRespContent = this.toolset.getTool(func.name()).call(func.arguments());
+            var func = toolCall.function();
+            Tool tool = this.toolset.getTool(func.name());
+            String toolRespContent = tool.call(func.arguments());
             toolCallsCount++;
-            logger.atInfo()
-                    .addKeyValue("name", tool.function().name())
+            logger.atDebug()
+                    .addKeyValue("name", toolCall.function().name())
                     .addKeyValue("toolCallsCount", toolCallsCount)
                     .addKeyValue("toolResponse", toolRespContent)
                     .log("tool called successfully");
 
-            var toolMsg = new LLMChatCompletionMessage.LLMChatCompletionMessageTool(tool.id(), toolRespContent);
+            var toolMsg = new LLMChatCompletionMessage.LLMChatCompletionMessageTool(toolCall.id(), toolRespContent);
             messages.add(toolMsg);
         }
     }

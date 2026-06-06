@@ -7,7 +7,6 @@ import mysimpleagent.llm.chatcompletions.payloads.LLMChatCompletionMessage;
 import mysimpleagent.tools.ToolService;
 import mysimpleagent.tools.ToolsLoader;
 import mysimpleagent.tools.Toolset;
-import mysimpleagent.tools.functions.GetCurrentWeather;
 import mysimpleagent.tools.functions.ToolRead;
 import mysimpleagent.tools.functions.ToolWrite;
 import org.slf4j.Logger;
@@ -26,7 +25,7 @@ public class App {
     static void main() {
         logger.atInfo().log("initializing...");
 
-        var config = Config.loadFromEnv();
+        Config config = Config.loadFromEnv();
 
         // Jackson's JSON encoder/decoder
         var objectMapper = new ObjectMapper();
@@ -36,7 +35,6 @@ public class App {
         List<Object> tools = toolsLoader.loadToolsFromResources();
 
         // Tools
-//        var getCurrentWeather = new GetCurrentWeather(objectMapper);
         var toolWrite = new ToolWrite(objectMapper);
         var toolRead = new ToolRead(objectMapper);
         var toolset = new Toolset(toolWrite, toolRead);
@@ -52,6 +50,7 @@ public class App {
                 .build();
 
         var llmService = new LLMService(llmClient, objectMapper, config, tools, respParser);
+
         List<LLMChatCompletionMessage> messages = llmService.newConversation();
 
         // Main loop
@@ -59,10 +58,6 @@ public class App {
             //TODO improve exception handling
             var input = new Scanner(System.in);
             System.out.print(">>> ");
-
-            // is this really needed?
-            System.out.flush();
-            System.err.flush();
 
             final String prompt;
             try {
@@ -76,7 +71,7 @@ public class App {
                 continue;
             }
 
-            if (prompt.equals("/exit") || prompt.equals("/quit")) {
+            if (prompt.equals("/exit") || prompt.equals("/quit") || prompt.equals("/q")) {
                 break;
             }
 

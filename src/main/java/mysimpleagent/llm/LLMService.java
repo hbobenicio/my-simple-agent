@@ -53,8 +53,6 @@ public class LLMService {
     }
 
     public ChatResponse chat(List<LLMChatCompletionMessage> messages, String userPrompt) throws IOException, InterruptedException {
-        logger.atInfo().log("preparando requisição...");
-
         // appending user's prompt to the chat messages (history)
         messages.add(new LLMChatCompletionMessage("user", userPrompt));
 
@@ -62,11 +60,15 @@ public class LLMService {
     }
 
     private ChatResponse doChat(List<LLMChatCompletionMessage> messages) throws IOException, InterruptedException {
+
+        // Chat Completions Payload
         var stream = true;
         var payload = new LLMChatCompletionPayload(getModelName(), stream, messages, this.tools);
+
+        // HTTP Chat Completions Request
         HttpRequest request = createChatRequest(payload);
 
-        logger.atInfo().log("blocking on sse request...");
+        logger.atDebug().log("blocking on sse request...");
         HttpResponse<Stream<String>> response = llmClient.send(request, HttpResponse.BodyHandlers.ofLines());
         HttpValidator.throwIfNotOk(response);
 
@@ -85,6 +87,7 @@ public class LLMService {
                 if (event == null) {
                     continue;
                 }
+
                 var choices = event.choices();
                 if (choices.size() != 1) {
                     logger.atError()
@@ -93,8 +96,11 @@ public class LLMService {
                     // or should I break it?
                     continue;
                 }
+
                 var choice = choices.getFirst();
                 if (choice.finishReason() != null) {
+                    // The model decided to finish the conversation
+
                     if (currentToolCall != null) {
                         String previousToolFinalArgs = toolArgsBuilder.toString();
                         toolArgsBuilder.setLength(0);
@@ -152,7 +158,7 @@ public class LLMService {
                             currentToolCall = toolCall;
                         }
 
-                        System.out.printf("- [%s] Tool Call: %s ", toolCall.id(), toolCall.function().name());
+                        System.out.printf("[%s] \uD83D\uDD28 %s ", toolCall.id(), toolCall.function().name());
                     } else {
                         System.out.print(toolCall.function().arguments());
                         toolArgsBuilder.append(toolCall.function().arguments());
@@ -195,7 +201,7 @@ public class LLMService {
                 .POST(HttpRequest.BodyPublishers.ofString(payloadStr))
                 .timeout(Duration.ofMinutes(1))
                 .build();
-        logger.atInfo()
+        logger.atDebug()
                 .addKeyValue("method", request.method())
                 .addKeyValue("url", uri)
                 .log("request");
@@ -203,32 +209,10 @@ public class LLMService {
         return request;
     }
 
-//    private String callWriteTool(String arguments) {
-//        logger.atInfo()
-//                .addKeyValue("arguments", arguments)
-//                .log("calling write tool...");
-//
-//        record Args(
-//                @JsonProperty("output_file_path") String outputFilePath,
-//                String contents
-//        ){}
-//
-//        Args args = this.objectMapper.readValue(arguments, new TypeReference<>(){});
-//
-//        try {
-//            Files.writeString(Path.of(args.outputFilePath), args.contents);
-//            return "arquivo escrito com sucesso";
-//        } catch (IOException e) {
-//            logger.atError().setCause(e).log("write falhou");
-//            return e.toString();
-//        }
-//    }
-//
-//    private LLMChatCompletionResponse parseResponse(HttpResponse<InputStream> response) throws IOException {
-//        try (InputStream is = response.body()) {
-//            return this.objectMapper.readValue(is, new TypeReference<>() {});
-//        }
-//    }
+    public ChatResponse chatToolsBack(List<LLMChatCompletionMessage> messages) throws IOException, InterruptedException {
+        // tool calls were already being added to the chat conversation history
+        return doChat(messages);
+    }
 
     public String getModelName() {
         return this.config.getLlmModelName();
@@ -236,12 +220,5 @@ public class LLMService {
 
     public String getSystemPrompt() {
         return this.config.getLlmSystemPrompt();
-    }
-
-    public ChatResponse chatToolsBack(List<LLMChatCompletionMessage> messages) throws IOException, InterruptedException {
-        //FIXME probably not correct. What if the user instructs the model to call a tool then another one...
-        //      can this mess the behaviour of it?
-//        messages.add(new LLMChatCompletionMessage("assistant", "here are the tools results. now formulate a final response to the user"));
-        return doChat(messages);
     }
 }
