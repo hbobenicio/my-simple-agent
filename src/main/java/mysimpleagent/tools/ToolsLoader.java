@@ -22,10 +22,10 @@ public class ToolsLoader {
         String toolsString = ResourceUtils.loadResourceAsString(toolsResourcePath);
 
         List<Object> tools = this.objectMapper.readValue(toolsString, new TypeReference<>(){});
-        logger.atInfo()
+        logger.atDebug()
                 .addKeyValue("toolsCount", tools.size())
                 .addKeyValue("resourcePath", toolsResourcePath)
-                .log("tools carregadas com sucesso");
+                .log("tool specs: loaded");
 
         return tools;
     }

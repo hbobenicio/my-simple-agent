@@ -7,6 +7,18 @@
         </encoder>
     </appender>
 
+    <!-- 2. Dedicated File Appender for Audit Logs -->
+    <appender name="DUMP-APPENDER" class="ch.qos.logback.core.FileAppender">
+        <file>/tmp/my-simple-agent.dump.txt</file>
+        <encoder>
+            <pattern>[%d{HH:mm:ss.SSS}] [%thread] %level: %logger{36}: %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="DUMP" level="${LOG_LEVEL}" additivity="false">
+        <appender-ref ref="DUMP-APPENDER" />
+    </logger>
+
     <root level="${LOG_LEVEL}">
         <appender-ref ref="STDOUT" />
     </root>

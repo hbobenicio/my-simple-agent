@@ -13,14 +13,18 @@ public class ResourceUtils {
     private static final Logger logger = LoggerFactory.getLogger(ResourceUtils.class.getSimpleName());
 
     public static String loadResourceAsString(String resourcePath) {
-        logger.atInfo().addKeyValue("path", resourcePath).log("carregando recurso...");
+        logger.atDebug()
+                .addKeyValue("path", resourcePath)
+                .log("resource: loading..");
         try (InputStream is = Config.class.getResourceAsStream(resourcePath)) {
             if (is == null) {
                 throw new FileNotFoundException(resourcePath);
             }
             byte[] contents = is.readAllBytes();
             var result = new String(contents, StandardCharsets.UTF_8);
-            logger.atInfo().addKeyValue("path", resourcePath).log("recurso carregado com sucesso.");
+            logger.atDebug()
+                    .addKeyValue("path", resourcePath)
+                    .log("resource: loaded");
             return result;
         } catch (IOException e) {
             throw new RuntimeException(e);

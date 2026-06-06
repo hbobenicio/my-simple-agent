@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 
 public class LLMService {
     private static final Logger logger = LoggerFactory.getLogger(LLMService.class.getSimpleName());
+    private static final Logger dump = LoggerFactory.getLogger("DUMP");
 
     private final HttpClient llmClient;
     private final ObjectMapper objectMapper;
@@ -83,12 +84,17 @@ public class LLMService {
             var firstContent = true;
             var firstToolCall = true;
             for (String chunkLine: (Iterable<String>) chunkStream::iterator) {
+                dump.atInfo().log(chunkLine);
                 LLMChatCompletionsStreamResponseEvent event = respParser.parseEvent(chunkLine);
                 if (event == null) {
                     continue;
                 }
 
                 var choices = event.choices();
+                if (choices == null || choices.isEmpty()) {
+                    logger.atWarn().log("streaming chunk response has no choices");
+                    continue;
+                }
                 if (choices.size() != 1) {
                     logger.atError()
                             .addKeyValue("choicesSize", choices.size())
@@ -116,9 +122,6 @@ public class LLMService {
                     break;
                 }
                 var delta = choice.delta();
-                if (delta.role() != null) {
-                    System.out.printf("=== %s ===%n%n", delta.role().toUpperCase());
-                }
                 if (delta.reasoningContent() != null) {
                     if (firstReasoning) {
                         firstReasoning = false;

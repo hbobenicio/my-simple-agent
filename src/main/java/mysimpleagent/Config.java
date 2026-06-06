@@ -18,20 +18,20 @@ public class Config {
         cfg.llmBaseUrl = Optional.ofNullable(System.getenv("LLM_BASE_URL"))
                 .map(String::trim)
                 .orElse("http://localhost:12434/v1");
-        logger.atInfo()
+        logger.atDebug()
                 .addKeyValue("LLM_BASE_URL", cfg.llmBaseUrl)
                 .log("value loaded");
 
         cfg.llmModelName = Optional.ofNullable(System.getenv("LLM_MODEL_NAME"))
                 .map(String::trim)
                 .orElse("qwen/qwen3-4b");
-        logger.atInfo()
+        logger.atDebug()
                 .addKeyValue("LLM_MODEL_NAME", cfg.llmModelName)
                 .log("value loaded");
 
         //TODO make this a template. render it with env context info
         cfg.llmSystemPrompt = ResourceUtils.loadResourceAsString("/system.prompt.txt");
-        logger.atInfo()
+        logger.atDebug()
                 .addKeyValue("systemPromptSize", cfg.llmSystemPrompt.length())
                 .log("system prompt loaded");
         return cfg;

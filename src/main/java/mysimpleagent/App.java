@@ -9,10 +9,15 @@ import mysimpleagent.tools.ToolsLoader;
 import mysimpleagent.tools.Toolset;
 import mysimpleagent.tools.functions.ToolRead;
 import mysimpleagent.tools.functions.ToolWrite;
+import org.jline.reader.LineReader;
+import org.jline.reader.LineReaderBuilder;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.jackson.databind.ObjectMapper;
 
+import java.io.IOException;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.List;
@@ -23,7 +28,7 @@ public class App {
     private static final Logger logger = LoggerFactory.getLogger(App.class.getSimpleName());
 
     static void main() {
-        logger.atInfo().log("initializing...");
+        logger.atDebug().log("initializing..");
 
         Config config = Config.loadFromEnv();
 
@@ -53,6 +58,14 @@ public class App {
 
         List<LLMChatCompletionMessage> messages = llmService.newConversation();
 
+        // Create a terminal
+        Terminal terminal = terminalCreate();
+
+        // Create a line reader
+        LineReader reader = LineReaderBuilder.builder()
+                .terminal(terminal)
+                .build();
+
         // Main loop
         while (true) {
             //TODO improve exception handling
@@ -66,6 +79,7 @@ public class App {
                 logger.atDebug().setCause(e).log("EOF: no more lines do read");
                 break;
             }
+//            String prompt = reader.readLine(">>> ");
 
             if (prompt.isEmpty()) {
                 continue;
@@ -105,6 +119,16 @@ public class App {
                     throw new RuntimeException(e);
                 }
             }
+        }
+    }
+
+    private static Terminal terminalCreate() {
+        try {
+            return TerminalBuilder.builder().system(true).build();
+        } catch (IOException e) {
+            logger.atError().setCause(e).log("terminal creation failed");
+            System.exit(1);
+            return null;
         }
     }
 }
