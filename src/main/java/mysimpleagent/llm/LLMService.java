@@ -11,6 +11,7 @@ import mysimpleagent.llm.chatcompletions.payloads.LLMChatCompletionToolFunction;
 import mysimpleagent.llm.chatcompletions.stream.LLMChatCompletionsStreamChoiceDeltaToolCall;
 import mysimpleagent.llm.chatcompletions.stream.LLMChatCompletionsStreamChoiceDeltaToolCallFunction;
 import mysimpleagent.llm.chatcompletions.stream.LLMChatCompletionsStreamResponseEvent;
+import org.jline.terminal.Terminal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.jackson.databind.ObjectMapper;
@@ -34,11 +35,13 @@ public class LLMService {
     private final Config config;
     private final List<Object> tools;
     private final LLMChatCompletionsStreamResponseParser respParser;
+    private final Terminal terminal;
 
-    public LLMService(HttpClient llmClient, ObjectMapper objectMapper, Config config, List<Object> tools, LLMChatCompletionsStreamResponseParser respParser) {
+    public LLMService(HttpClient llmClient, ObjectMapper objectMapper, Config config, Terminal terminal, List<Object> tools, LLMChatCompletionsStreamResponseParser respParser) {
         this.llmClient = llmClient;
         this.objectMapper = objectMapper;
         this.config = config;
+        this.terminal = terminal;
         this.tools = tools;
         this.respParser = respParser;
     }
@@ -54,9 +57,7 @@ public class LLMService {
     }
 
     public ChatResponse chat(List<LLMChatCompletionMessage> messages, String userPrompt) throws IOException, InterruptedException {
-        // appending user's prompt to the chat messages (history)
         messages.add(new LLMChatCompletionMessage("user", userPrompt));
-
         return doChat(messages);
     }
 
@@ -115,7 +116,8 @@ public class LLMService {
                         toolCalls.add(finalToolCall);
                     }
 
-                    System.out.printf("%n%n");
+                    this.terminal.writer().printf("%n%n");
+                    this.terminal.flush();
                     logger.atInfo()
                             .addKeyValue("finishReason", choice.finishReason())
                             .log("finished");
@@ -125,16 +127,20 @@ public class LLMService {
                 if (delta.reasoningContent() != null) {
                     if (firstReasoning) {
                         firstReasoning = false;
-                        System.out.print("REASONING: ");
+                        this.terminal.writer().print("REASONING: ");
+                        this.terminal.flush();
                     }
-                    System.out.print(delta.reasoningContent());
+                    this.terminal.writer().print(delta.reasoningContent());
+                    this.terminal.flush();
                     reasoningStringBuilder.append(delta.reasoningContent());
                 } else if (delta.content() != null) {
                     if (firstContent) {
                         firstContent = false;
-                        System.out.print("\nMESSAGE: ");
+                        this.terminal.writer().print("\nMESSAGE: ");
+                        this.terminal.flush();
                     }
-                    System.out.print(delta.content());
+                    this.terminal.writer().print(delta.content());
+                    this.terminal.flush();
                     messageStringBuilder.append(delta.content());
                 } else if (delta.toolCalls() != null) {
                     if (delta.toolCalls().size() > 1) {
@@ -151,7 +157,8 @@ public class LLMService {
                         if (firstToolCall) {
                             currentToolCall = toolCall;
                             firstToolCall = false;
-                            System.out.println("TOOL CALLS:");
+                            this.terminal.writer().println("TOOL CALLS:");
+                            this.terminal.flush();
                         } else {
                             String previousToolFinalArgs = toolArgsBuilder.toString();
                             toolArgsBuilder.setLength(0);
@@ -161,9 +168,11 @@ public class LLMService {
                             currentToolCall = toolCall;
                         }
 
-                        System.out.printf("[%s] \uD83D\uDD28 %s ", toolCall.id(), toolCall.function().name());
+                        this.terminal.writer().printf("[%s] \uD83D\uDD28 %s ", toolCall.id(), toolCall.function().name());
+                        this.terminal.flush();
                     } else {
-                        System.out.print(toolCall.function().arguments());
+                        this.terminal.writer().print(toolCall.function().arguments());
+                        this.terminal.flush();
                         toolArgsBuilder.append(toolCall.function().arguments());
                     }
                 }

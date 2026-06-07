@@ -5,7 +5,7 @@
 3. [X] Remove dead code
 4. [X] Fix maven-shade-plugin warnings
 5. [X] Add tool Bash
-6. [-] Add JLine
+6. [X] Add JLine
 7. [ ] Add simple ansi colors for each role
 8. [ ] Simplify payload and streaming events models
 9. [ ] List models and ask the user to pick one
