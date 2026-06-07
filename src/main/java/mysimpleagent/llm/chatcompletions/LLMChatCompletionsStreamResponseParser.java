@@ -1,6 +1,6 @@
 package mysimpleagent.llm.chatcompletions;
 
-import mysimpleagent.llm.chatcompletions.stream.LLMChatCompletionsStreamResponseEvent;
+import mysimpleagent.llm.chatcompletions.stream.ChatCompletionStreamResponseEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.jackson.databind.ObjectMapper;
@@ -14,7 +14,7 @@ public class LLMChatCompletionsStreamResponseParser {
         this.objectMapper = objectMapper;
     }
 
-    public LLMChatCompletionsStreamResponseEvent parseEvent(String streamLine) {
+    public ChatCompletionStreamResponseEvent parseEvent(String streamLine) {
         streamLine = streamLine.trim();
         if (streamLine.isEmpty()) {
             return null;
@@ -29,6 +29,6 @@ public class LLMChatCompletionsStreamResponseParser {
         }
         String chunkString = streamLine.substring(prefix.length());
 
-        return this.objectMapper.readValue(chunkString, LLMChatCompletionsStreamResponseEvent.class);
+        return this.objectMapper.readValue(chunkString, ChatCompletionStreamResponseEvent.class);
     }
 }

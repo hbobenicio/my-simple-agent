@@ -7,7 +7,7 @@ import mysimpleagent.llm.chatcompletions.LLMChatCompletionsStreamResponseParser;
 import mysimpleagent.llm.chatcompletions.models.*;
 import mysimpleagent.llm.chatcompletions.stream.LLMChatCompletionsStreamChoiceDeltaToolCall;
 import mysimpleagent.llm.chatcompletions.stream.LLMChatCompletionsStreamChoiceDeltaToolCallFunction;
-import mysimpleagent.llm.chatcompletions.stream.LLMChatCompletionsStreamResponseEvent;
+import mysimpleagent.llm.chatcompletions.stream.ChatCompletionStreamResponseEvent;
 import org.jline.terminal.Terminal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,7 +87,7 @@ public class LLMService {
             var firstToolCall = true;
             for (String chunkLine: (Iterable<String>) chunkStream::iterator) {
                 dump.atInfo().log(chunkLine);
-                LLMChatCompletionsStreamResponseEvent event = respParser.parseEvent(chunkLine);
+                ChatCompletionStreamResponseEvent event = respParser.parseEvent(chunkLine);
                 if (event == null) {
                     continue;
                 }
