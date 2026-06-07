@@ -1,4 +1,4 @@
-package mysimpleagent.llm.chatcompletions.payloads;
+package mysimpleagent.llm.chatcompletions.models;
 
 import java.util.Map;
 

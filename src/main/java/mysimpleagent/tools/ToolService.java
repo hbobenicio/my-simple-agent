@@ -1,6 +1,6 @@
 package mysimpleagent.tools;
 
-import mysimpleagent.llm.chatcompletions.payloads.LLMChatCompletionMessage;
+import mysimpleagent.llm.chatcompletions.models.ChatCompletionMessageParam;
 import mysimpleagent.llm.chatcompletions.stream.LLMChatCompletionsStreamChoiceDeltaToolCall;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +17,7 @@ public class ToolService {
     }
 
     public void callTools(
-            List<LLMChatCompletionMessage> messages,
+            List<ChatCompletionMessageParam> messages,
             List<LLMChatCompletionsStreamChoiceDeltaToolCall> toolCalls
     ) throws Exception {
         //TODO implement tool calls limit
@@ -40,7 +40,7 @@ public class ToolService {
                     .addKeyValue("toolResponse", toolRespContent)
                     .log("tool called successfully");
 
-            var toolMsg = new LLMChatCompletionMessage.LLMChatCompletionMessageTool(toolCall.id(), toolRespContent);
+            var toolMsg = new ChatCompletionMessageParam.ChatCompletionToolMessageParam(toolCall.id(), toolRespContent);
             messages.add(toolMsg);
         }
     }

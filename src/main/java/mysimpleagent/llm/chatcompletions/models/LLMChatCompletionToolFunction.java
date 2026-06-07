@@ -1,4 +1,4 @@
-package mysimpleagent.llm.chatcompletions.payloads;
+package mysimpleagent.llm.chatcompletions.models;
 
 public record LLMChatCompletionToolFunction(
         String name,

@@ -3,7 +3,7 @@ package mysimpleagent;
 import mysimpleagent.llm.LLMService;
 import mysimpleagent.llm.chatcompletions.ChatResponse;
 import mysimpleagent.llm.chatcompletions.LLMChatCompletionsStreamResponseParser;
-import mysimpleagent.llm.chatcompletions.payloads.LLMChatCompletionMessage;
+import mysimpleagent.llm.chatcompletions.models.ChatCompletionMessageParam;
 import mysimpleagent.tools.ToolService;
 import mysimpleagent.tools.ToolsLoader;
 import mysimpleagent.tools.Toolset;
@@ -77,7 +77,7 @@ public class App {
 
             var llmService = new LLMService(llmClient, objectMapper, config, terminal, tools, respParser);
 
-            List<LLMChatCompletionMessage> messages = llmService.newConversation();
+            List<ChatCompletionMessageParam> messages = llmService.newConversation();
 
             // Main loop
             while (true) {

@@ -4,10 +4,7 @@ import mysimpleagent.Config;
 import mysimpleagent.http.HttpValidator;
 import mysimpleagent.llm.chatcompletions.ChatResponse;
 import mysimpleagent.llm.chatcompletions.LLMChatCompletionsStreamResponseParser;
-import mysimpleagent.llm.chatcompletions.payloads.LLMChatCompletionMessage;
-import mysimpleagent.llm.chatcompletions.payloads.LLMChatCompletionPayload;
-import mysimpleagent.llm.chatcompletions.payloads.LLMChatCompletionTool;
-import mysimpleagent.llm.chatcompletions.payloads.LLMChatCompletionToolFunction;
+import mysimpleagent.llm.chatcompletions.models.*;
 import mysimpleagent.llm.chatcompletions.stream.LLMChatCompletionsStreamChoiceDeltaToolCall;
 import mysimpleagent.llm.chatcompletions.stream.LLMChatCompletionsStreamChoiceDeltaToolCallFunction;
 import mysimpleagent.llm.chatcompletions.stream.LLMChatCompletionsStreamResponseEvent;
@@ -46,26 +43,30 @@ public class LLMService {
         this.respParser = respParser;
     }
 
-    public List<LLMChatCompletionMessage> newConversation() {
-        var messages = new ArrayList<LLMChatCompletionMessage>();
+    public List<ChatCompletionMessageParam> newConversation() {
+        var messages = new ArrayList<ChatCompletionMessageParam>();
 
         String systemPrompt = getSystemPrompt();
-        var systemMessage = new LLMChatCompletionMessage("system", systemPrompt);
+        var systemMessage = new ChatCompletionMessageParam.ChatCompletionSystemMessageParam(systemPrompt);
         messages.add(systemMessage);
 
         return messages;
     }
 
-    public ChatResponse chat(List<LLMChatCompletionMessage> messages, String userPrompt) throws IOException, InterruptedException {
-        messages.add(new LLMChatCompletionMessage("user", userPrompt));
+    public ChatResponse chat(List<ChatCompletionMessageParam> messages, String userPrompt) throws IOException, InterruptedException {
+        messages.add(new ChatCompletionMessageParam.ChatCompletionUserMessageParam(userPrompt));
         return doChat(messages);
     }
 
-    private ChatResponse doChat(List<LLMChatCompletionMessage> messages) throws IOException, InterruptedException {
+    private ChatResponse doChat(List<ChatCompletionMessageParam> messages) throws IOException, InterruptedException {
 
-        // Chat Completions Payload
-        var stream = true;
-        var payload = new LLMChatCompletionPayload(getModelName(), stream, messages, this.tools);
+        var payload = new ChatCompletionRequestPayload(
+                getModelName(),
+                true,  // stream
+                new ChatCompletionStreamOptions(null, true),  //NOTE LM-Studio doesnt support this ATM
+                messages,
+                this.tools
+        );
 
         // HTTP Chat Completions Request
         HttpRequest request = createChatRequest(payload);
@@ -190,13 +191,13 @@ public class LLMService {
                     toolCall.function().arguments()
             ));
             chatToolCalls.add(chatToolCallMsg);
-            var assistantMsg = new LLMChatCompletionMessage.LLMChatCompletionMessageAssistant(null, chatToolCalls);
+            var assistantMsg = new ChatCompletionMessageParam.ChatCompletionAssistantMessageParam(null, chatToolCalls);
             messages.add(assistantMsg);
         }
         return new ChatResponse(finalReasoning, finalMessage, toolCalls);
     }
 
-    private HttpRequest createChatRequest(LLMChatCompletionPayload payload) {
+    private HttpRequest createChatRequest(ChatCompletionRequestPayload payload) {
         var uri = URI.create(this.config.getLlmBaseUrl() + "/chat/completions");
 
         String payloadStr = this.objectMapper
@@ -221,7 +222,7 @@ public class LLMService {
         return request;
     }
 
-    public ChatResponse chatToolsBack(List<LLMChatCompletionMessage> messages) throws IOException, InterruptedException {
+    public ChatResponse chatToolsBack(List<ChatCompletionMessageParam> messages) throws IOException, InterruptedException {
         // tool calls were already being added to the chat conversation history
         return doChat(messages);
     }
