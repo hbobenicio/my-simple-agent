@@ -6,12 +6,10 @@ import mysimpleagent.llm.chatcompletions.ChatResponse;
 import mysimpleagent.llm.chatcompletions.LLMChatCompletionsStreamResponseParser;
 import mysimpleagent.llm.chatcompletions.TokenUsagePrinter;
 import mysimpleagent.llm.chatcompletions.models.*;
-import mysimpleagent.llm.chatcompletions.stream.ChatCompletionUsage;
+import mysimpleagent.llm.chatcompletions.stream.ChatCompletionStreamResponseEvent;
 import mysimpleagent.llm.chatcompletions.stream.LLMChatCompletionsStreamChoiceDeltaToolCall;
 import mysimpleagent.llm.chatcompletions.stream.LLMChatCompletionsStreamChoiceDeltaToolCallFunction;
-import mysimpleagent.llm.chatcompletions.stream.ChatCompletionStreamResponseEvent;
 import org.jline.terminal.Terminal;
-import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +20,9 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -66,6 +67,21 @@ public class LLMService {
         var messages = new ArrayList<ChatCompletionMessageParam>();
 
         String systemPrompt = getSystemPrompt();
+
+        String agentsContent = null;
+        try {
+            agentsContent = Files.readString(Path.of("AGENTS.md"));
+            logger.atInfo().log("AGENTS.md loaded successfully");
+        } catch (NoSuchFileException ignored) {
+            // casual condition. no need to log the exception
+            logger.atDebug().log("AGENTS.md not found");
+        } catch (IOException e) {
+            logger.atError().setCause(e).log("failed to load AGENTS.md");
+        }
+        if (agentsContent != null) {
+            systemPrompt += "\n<AGENTS.md>\n" + agentsContent + "</AGENTS.md>\n";
+        }
+
         var systemMessage = new ChatCompletionMessageParam.ChatCompletionSystemMessageParam(systemPrompt);
         messages.add(systemMessage);
 
@@ -235,19 +251,25 @@ public class LLMService {
             }
             String finalReasoning = reasoningStringBuilder.toString();
             String finalMessage = messageStringBuilder.toString();
-            // add the tool calls to the chat
+
+            // collect the tool calls into objects to be included in the chat messages
+            List<LLMChatCompletionTool> chatToolCalls = new ArrayList<>();
             for (var toolCall : toolCalls) {
                 //TODO improve this. Models are duplicated... deltas and chat message payloads
-                List<LLMChatCompletionTool> chatToolCalls = new ArrayList<>();
                 var chatToolCallMsg = new LLMChatCompletionTool(toolCall.id(), toolCall.type(), new LLMChatCompletionToolFunction(
                         toolCall.function().name(),
                         null,  // description... needed?
                         toolCall.function().arguments()
                 ));
                 chatToolCalls.add(chatToolCallMsg);
-                var assistantMsg = new ChatCompletionMessageParam.ChatCompletionAssistantMessageParam(null, chatToolCalls);
-                messages.add(assistantMsg);
             }
+
+            // add the assistant message to the chat
+            var assistantMsg = chatToolCalls.isEmpty()
+                    ? new ChatCompletionMessageParam.ChatCompletionAssistantMessageParam(finalMessage, finalReasoning, null)
+                    : new ChatCompletionMessageParam.ChatCompletionAssistantMessageParam(null, finalReasoning, chatToolCalls);
+            messages.add(assistantMsg);
+
             return new ChatResponse(finalReasoning, finalMessage, toolCalls);
         } finally {
             // Ensure we reset the state of the terminal in any case

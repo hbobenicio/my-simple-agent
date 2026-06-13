@@ -1,8 +1,6 @@
 package mysimpleagent.llm.chatcompletions.models;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.*;
 
 import java.util.List;
 
@@ -49,6 +47,7 @@ public abstract class ChatCompletionMessageParam {
         this.content = content;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class ChatCompletionDeveloperMessageParam extends ChatCompletionMessageParam {
         public String name;
 
@@ -57,6 +56,7 @@ public abstract class ChatCompletionMessageParam {
         }
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class ChatCompletionSystemMessageParam extends ChatCompletionMessageParam {
         public String name;
 
@@ -65,6 +65,7 @@ public abstract class ChatCompletionMessageParam {
         }
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class ChatCompletionUserMessageParam extends ChatCompletionMessageParam {
         public String name;
 
@@ -73,15 +74,22 @@ public abstract class ChatCompletionMessageParam {
         }
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class ChatCompletionAssistantMessageParam extends ChatCompletionMessageParam {
+
         public String name;
+
+        @JsonProperty("reasoning_content")
+        public String reasoningContent;
+
         public String refusal;
 
         @JsonProperty("tool_calls")
         public List<LLMChatCompletionTool> toolCalls;
 
-        public ChatCompletionAssistantMessageParam(String content, List<LLMChatCompletionTool> toolCalls) {
+        public ChatCompletionAssistantMessageParam(String content, String reasoningContent, List<LLMChatCompletionTool> toolCalls) {
             super("assistant", content);
+            this.reasoningContent = reasoningContent;
             this.toolCalls = toolCalls;
         }
     }
@@ -96,6 +104,7 @@ public abstract class ChatCompletionMessageParam {
         }
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class ChatCompletionFunctionMessageParam extends ChatCompletionMessageParam {
         public String name;
 

@@ -1,8 +1,11 @@
 package mysimpleagent.llm.chatcompletions.models;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public record ChatCompletionStreamOptions(
+
         @JsonProperty("include_obfuscation")
         Boolean includeObfuscation,
 
