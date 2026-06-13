@@ -18,5 +18,7 @@ public record ChatCompletionStreamResponseEvent(
         // The model to generate the completion.
         String model,
 
-        List<LLMChatCompletionsStreamChoice> choices
+        List<LLMChatCompletionsStreamChoice> choices,
+
+        ChatCompletionUsage usage
 ){}
