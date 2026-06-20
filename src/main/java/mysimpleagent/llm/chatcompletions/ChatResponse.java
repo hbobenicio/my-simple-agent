@@ -1,8 +1,9 @@
 package mysimpleagent.llm.chatcompletions;
 
-import mysimpleagent.llm.chatcompletions.stream.LLMChatCompletionsStreamChoiceDeltaToolCall;
+import mysimpleagent.llm.chatcompletions.payloads.stream.LLMChatCompletionsStreamChoiceDeltaToolCall;
 
 import java.util.List;
+import java.util.Optional;
 
 public record ChatResponse(
         String reasoning,
@@ -10,6 +11,9 @@ public record ChatResponse(
         List<LLMChatCompletionsStreamChoiceDeltaToolCall> toolCalls
 ) {
     public boolean hasToolCalls() {
-        return !toolCalls.isEmpty();
+        return Optional.ofNullable(this.toolCalls)
+                .map(List::size)
+                .filter(n -> n > 0)
+                .isPresent();
     }
 }

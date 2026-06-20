@@ -1,8 +1,8 @@
-package mysimpleagent.llm.chatcompletions.stream;
+package mysimpleagent.llm.chatcompletions.payloads.stream;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public record ChatCompletionStreamResponseEventUsageTokenDetails(
+public record CompletionUsageCompletionTokenDetails(
         @JsonProperty("reasoning_tokens")
         Integer reasoningTokens
 ) {}

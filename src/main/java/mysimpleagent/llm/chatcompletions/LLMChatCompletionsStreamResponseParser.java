@@ -1,6 +1,6 @@
 package mysimpleagent.llm.chatcompletions;
 
-import mysimpleagent.llm.chatcompletions.stream.ChatCompletionStreamResponseEvent;
+import mysimpleagent.llm.chatcompletions.payloads.stream.ChatCompletionStreamResponseEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.jackson.databind.ObjectMapper;

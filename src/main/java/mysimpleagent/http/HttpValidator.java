@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 public class HttpValidator {
     private static final Logger logger = LoggerFactory.getLogger(HttpValidator.class.getSimpleName());
 
-    public static void throwIfNotOk(HttpResponse<Stream<String>> response) {
+    public static <T> void throwIfNotOk(HttpResponse<T> response) {
         logger.atDebug()
                 .addKeyValue("statusCode", response.statusCode())
                 .addKeyValue("expected", "2XX")

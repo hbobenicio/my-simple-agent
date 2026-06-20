@@ -1,18 +1,22 @@
 package mysimpleagent.llm;
 
+import mysimpleagent.App;
 import mysimpleagent.Config;
 import mysimpleagent.http.HttpValidator;
 import mysimpleagent.llm.chatcompletions.ChatResponse;
 import mysimpleagent.llm.chatcompletions.LLMChatCompletionsStreamResponseParser;
 import mysimpleagent.llm.chatcompletions.TokenUsagePrinter;
-import mysimpleagent.llm.chatcompletions.models.*;
-import mysimpleagent.llm.chatcompletions.stream.ChatCompletionStreamResponseEvent;
-import mysimpleagent.llm.chatcompletions.stream.LLMChatCompletionsStreamChoiceDeltaToolCall;
-import mysimpleagent.llm.chatcompletions.stream.LLMChatCompletionsStreamChoiceDeltaToolCallFunction;
+import mysimpleagent.llm.chatcompletions.payloads.*;
+import mysimpleagent.llm.chatcompletions.payloads.stream.ChatCompletionStreamResponseEvent;
+import mysimpleagent.llm.chatcompletions.payloads.stream.LLMChatCompletionsStreamChoiceDeltaToolCall;
+import mysimpleagent.llm.chatcompletions.payloads.stream.LLMChatCompletionsStreamChoiceDeltaToolCallFunction;
+import mysimpleagent.llm.models.payloads.LLMModelListItem;
+import mysimpleagent.llm.models.payloads.LLMModelListResponse;
 import org.jline.terminal.Terminal;
 import org.jline.utils.AttributedStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
@@ -26,6 +30,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class LLMService {
@@ -47,20 +52,27 @@ public class LLMService {
     private final LLMChatCompletionsStreamResponseParser respParser;
     private final Terminal terminal;
 
-    public LLMService(
-            HttpClient llmClient,
-            ObjectMapper objectMapper,
-            Config config,
-            Terminal terminal,
-            List<Object> tools,
-            LLMChatCompletionsStreamResponseParser respParser
-    ) {
+    public LLMService(HttpClient llmClient, List<Object> tools, LLMChatCompletionsStreamResponseParser respParser) {
         this.llmClient = llmClient;
-        this.objectMapper = objectMapper;
-        this.config = config;
-        this.terminal = terminal;
+        this.objectMapper = App.getContext().getObjectMapper();
+        this.config = App.getContext().getConfig();
+        this.terminal = App.getContext().getTerminal();
         this.tools = tools;
         this.respParser = respParser;
+    }
+
+    public List<String> modelsList() throws IOException, InterruptedException {
+        HttpRequest request = createModelsListRequest();
+
+        HttpResponse<String> response = llmClient.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpValidator.throwIfNotOk(response);
+
+        LLMModelListResponse resp = this.objectMapper.readValue(response.body(), new TypeReference<>(){});
+        logger.atDebug()
+                .addKeyValue("count", resp.data().size())
+                .log("models: fetched list of models");
+
+        return resp.data().stream().map(LLMModelListItem::id).toList();
     }
 
     public List<ChatCompletionMessageParam> newConversation() {
@@ -71,7 +83,7 @@ public class LLMService {
         String agentsContent = null;
         try {
             agentsContent = Files.readString(Path.of("AGENTS.md"));
-            logger.atInfo().log("AGENTS.md loaded successfully");
+            logger.atDebug().log("AGENTS.md loaded successfully");
         } catch (NoSuchFileException ignored) {
             // casual condition. no need to log the exception
             logger.atDebug().log("AGENTS.md not found");
@@ -81,6 +93,9 @@ public class LLMService {
         if (agentsContent != null) {
             systemPrompt += "\n<AGENTS.md>\n" + agentsContent + "</AGENTS.md>\n";
         }
+
+        //TODO search for skills. get their frontmatters. add them to the system message
+        
 
         var systemMessage = new ChatCompletionMessageParam.ChatCompletionSystemMessageParam(systemPrompt);
         messages.add(systemMessage);
@@ -278,6 +293,24 @@ public class LLMService {
         }
     }
 
+    private HttpRequest createModelsListRequest() {
+        var uri = URI.create(this.config.getLlmBaseUrl() + "/models");
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .GET()
+                .uri(uri)
+                .header("Accept", "application/json")
+                .timeout(Duration.ofSeconds(5))
+                .build();
+
+        logger.atDebug()
+                .addKeyValue("method", request.method())
+                .addKeyValue("url", uri)
+                .log("request");
+
+        return request;
+    }
+
     private HttpRequest createChatRequest(ChatCompletionRequestPayload payload) {
         var uri = URI.create(this.config.getLlmBaseUrl() + "/chat/completions");
 
@@ -309,7 +342,7 @@ public class LLMService {
     }
 
     public String getModelName() {
-        return this.config.getLlmModelName();
+        return App.getContext().getSelectedModelName();
     }
 
     public String getSystemPrompt() {

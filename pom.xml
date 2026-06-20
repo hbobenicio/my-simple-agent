@@ -97,5 +97,17 @@
             <artifactId>jline-prompt</artifactId>
             <version>${app.jline.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.agentclientprotocol</groupId>
+            <artifactId>acp-core</artifactId>
+            <version>0.14.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.agentclientprotocol</groupId>
+            <artifactId>acp-agent-support</artifactId>
+            <version>0.14.0</version>
+        </dependency>
     </dependencies>
 </project>

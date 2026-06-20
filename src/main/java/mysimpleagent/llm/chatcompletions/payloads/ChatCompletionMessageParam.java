@@ -1,4 +1,4 @@
-package mysimpleagent.llm.chatcompletions.models;
+package mysimpleagent.llm.chatcompletions.payloads;
 
 import com.fasterxml.jackson.annotation.*;
 

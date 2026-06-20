@@ -6,16 +6,16 @@
 4. [X] Fix maven-shade-plugin warnings
 5. [X] Add tool Bash
 6. [X] Add JLine
-7. [ ] Add simple ansi colors for each role
+7. [X] Add simple ansi colors for each role
 8. [-] Simplify payload and streaming events models
-9. [ ] List models and ask the user to pick one
-10. [ ] Add support for AGENTS.md
+9. [X] List models and ask the user to pick one
+10. [X] Add support for AGENTS.md
+16. [-] Add Skills (.agent/skills/SKILL.md)
 11. [ ] Add tool Ask
 12. [ ] Add tool Plan
 13. [ ] Add tool Edit
 14. [ ] Add the @file inclusion (File inclusion to context)
 15. [ ] Add Custom Prompts (/foo)
-16. [ ] Add Skills (.agent/skills/SKILL.md)
 17. [ ] Add Environment to the System Prompt
 18. [ ] Implement Context Window context consumption
 19. [ ] Show System Prompt

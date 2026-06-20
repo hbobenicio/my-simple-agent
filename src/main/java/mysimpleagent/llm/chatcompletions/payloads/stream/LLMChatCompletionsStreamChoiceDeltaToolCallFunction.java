@@ -1,4 +1,4 @@
-package mysimpleagent.llm.chatcompletions.stream;
+package mysimpleagent.llm.chatcompletions.payloads.stream;
 
 public record LLMChatCompletionsStreamChoiceDeltaToolCallFunction (
         String name,

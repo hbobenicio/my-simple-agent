@@ -1,7 +1,7 @@
 package mysimpleagent.tools;
 
-import mysimpleagent.llm.chatcompletions.models.ChatCompletionMessageParam;
-import mysimpleagent.llm.chatcompletions.stream.LLMChatCompletionsStreamChoiceDeltaToolCall;
+import mysimpleagent.llm.chatcompletions.payloads.ChatCompletionMessageParam;
+import mysimpleagent.llm.chatcompletions.payloads.stream.LLMChatCompletionsStreamChoiceDeltaToolCall;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

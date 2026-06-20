@@ -1,4 +1,4 @@
-package mysimpleagent.llm.chatcompletions.stream;
+package mysimpleagent.llm.chatcompletions.payloads.stream;
 
 import java.util.List;
 
@@ -20,5 +20,5 @@ public record ChatCompletionStreamResponseEvent(
 
         List<LLMChatCompletionsStreamChoice> choices,
 
-        ChatCompletionUsage usage
+        CompletionUsage usage
 ){}

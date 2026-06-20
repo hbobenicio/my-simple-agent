@@ -1,9 +1,11 @@
 package mysimpleagent.llm.chatcompletions;
 
-import mysimpleagent.llm.chatcompletions.stream.ChatCompletionUsage;
+import mysimpleagent.llm.chatcompletions.payloads.stream.CompletionUsage;
 import org.jline.terminal.Terminal;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
+
+import java.util.Optional;
 
 public class TokenUsagePrinter {
     private final Terminal terminal;
@@ -12,30 +14,38 @@ public class TokenUsagePrinter {
         this.terminal = terminal;
     }
 
-    public void println(ChatCompletionUsage tokenUsage) {
-        String msg = new StringBuilder()
-                .append(String.format("prompt tokens    : %d (input: system + user prompts + tools)\n", tokenUsage.promptTokens()))
-                .append(String.format("reasoning tokens : %d (output)\n", tokenUsage.completionTokensDetails().reasoningTokens()))
-                .append(String.format("completion tokens: %d (output: reasoning + assistant answer + tool calls)\n", tokenUsage.completionTokens()))
-                .append(String.format("total tokens     : %d (input + output)", tokenUsage.totalTokens()))
-                .toString();
+    public void println(CompletionUsage tokenUsage) {
+        var sb = new StringBuilder(512);
+        sb.append("prompt tokens    : ");
+        sb.append(tokenUsage.promptTokens());
+        sb.append(" (input: system + user prompts + tools) ");
 
-        //  • Mensagens de Reasoning / Pensamento (Cor de Comentário do Tokyo Night):
-        //      • Hex:  #565f89  (ou  #414868  em algumas variações)
-        //      • ANSI TrueColor (RGB):  \x1b[38;2;86;95;137m
-        //      • ANSI 256-cores:  \x1b[38;5;60m
-        //  • Mensagens de Saída do Assistente (Cor de Texto Principal / Foreground do Tokyo Night):
-        //      • Hex:  #c0caf5
-        //      • ANSI TrueColor (RGB):  \x1b[38;2;192;202;245m
-        //      • ANSI 256-cores:  \x1b[38;5;146m
+        var maybePromptTokenDetails = Optional.ofNullable(tokenUsage.promptTokensDetails());
+        if (maybePromptTokenDetails.isPresent()) {
+            sb.append("[cached: ");
+            sb.append(maybePromptTokenDetails.get().cachedTokens());
+            sb.append("]");
+        }
+        sb.append("\n");
 
-        //  • Reasoning Messages (Model Thought / Comments)
-        //      • RGB:  rgb(86, 95, 137)   (Hex:  #565f89 )
-        //      • Alternative variant:  rgb(65, 72, 104)  (Hex:  #414868 )
-        //  • Assistant Output Messages (Main Text / Foreground)
-        //      • RGB:  rgb(192, 202, 245)  (Hex:  #c0caf5 )
+        var maybeCompletionTokenDetails = Optional.ofNullable(tokenUsage.completionTokensDetails());
+        if (maybeCompletionTokenDetails.isPresent()) {
+            sb.append("reasoning tokens : ");
+            sb.append(maybeCompletionTokenDetails.get().reasoningTokens());
+            sb.append(" (output)\n");
+        }
 
-        AttributedStyle style = AttributedStyle.DEFAULT.foreground(86, 95, 137);  // dark gray
+        sb.append("completion tokens: ");
+        sb.append(tokenUsage.completionTokens());
+        sb.append(" (output: reasoning + assistant answer + tool calls)\n");
+
+        sb.append("total tokens     : ");
+        sb.append(tokenUsage.totalTokens());
+        sb.append(" (input + output)");
+
+        String msg = sb.toString();
+
+        AttributedStyle style = AttributedStyle.DEFAULT.foreground(86, 95, 137);
         String ansiFormattedMsg = new AttributedStringBuilder()
                 .style(style)
                 .append(msg)
