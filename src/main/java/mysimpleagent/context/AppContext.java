@@ -1,6 +1,6 @@
 package mysimpleagent.context;
 
-import mysimpleagent.Config;
+import mysimpleagent.config.Config;
 import org.jline.terminal.Terminal;
 import tools.jackson.databind.ObjectMapper;
 

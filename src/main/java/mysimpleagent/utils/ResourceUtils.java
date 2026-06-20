@@ -1,6 +1,6 @@
 package mysimpleagent.utils;
 
-import mysimpleagent.Config;
+import mysimpleagent.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

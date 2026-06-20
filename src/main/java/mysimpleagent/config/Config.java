@@ -1,4 +1,4 @@
-package mysimpleagent;
+package mysimpleagent.config;
 
 import mysimpleagent.utils.ResourceUtils;
 import org.slf4j.Logger;

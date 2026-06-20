@@ -1,7 +1,7 @@
 package mysimpleagent.llm;
 
 import mysimpleagent.App;
-import mysimpleagent.Config;
+import mysimpleagent.config.Config;
 import mysimpleagent.http.HttpValidator;
 import mysimpleagent.llm.chatcompletions.ChatResponse;
 import mysimpleagent.llm.chatcompletions.LLMChatCompletionsStreamResponseParser;
@@ -30,7 +30,6 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class LLMService {
