@@ -6,6 +6,7 @@ import mysimpleagent.llm.LLMService;
 import mysimpleagent.llm.chatcompletions.ChatResponse;
 import mysimpleagent.llm.chatcompletions.LLMChatCompletionsStreamResponseParser;
 import mysimpleagent.llm.chatcompletions.payloads.ChatCompletionMessageParam;
+import mysimpleagent.skills.SkillSpec;
 import mysimpleagent.skills.SkillsService;
 import mysimpleagent.tools.ToolService;
 import mysimpleagent.tools.ToolsLoader;
@@ -75,7 +76,7 @@ public class Repl implements Runnable {
 
             // Skills
             var skillsService = new SkillsService();
-            skillsService.loadAll();
+            List<SkillSpec> skillSpecs = skillsService.loadAll();
 
             var respStreamParser = new LLMChatCompletionsStreamResponseParser(App.getContext().getObjectMapper());
 
@@ -96,10 +97,13 @@ public class Repl implements Runnable {
                     prompt = reader.readLine(ps1).trim();
                 } catch (UserInterruptException e) {
                     // user pressed ctrl+c
-                    logger.atDebug().setCause(e).log("ctrl-c captured");
+                    // intentionally ignoring the exception
+                    logger.atDebug().log("ctrl-c captured");
                     continue;
                 } catch (EndOfFileException e) {
-                    logger.atDebug().setCause(e).log("ctrl-d captured");
+                    // user pressed ctrl+d
+                    // intentionally ignoring the exception
+                    logger.atDebug().log("ctrl-d captured. stopping the application..");
                     break;
                 }
 
