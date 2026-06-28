@@ -43,9 +43,12 @@ public class Repl implements Runnable {
     public void run() {
         try (Terminal terminal = terminalCreate()) {
             App.getContext().setTerminal(terminal);
-            terminal.puts(InfoCmp.Capability.enter_ca_mode);
-            terminal.puts(InfoCmp.Capability.clear_screen);
-            terminal.flush();
+            // NOTE Entering the Alternate Screen mode implies that we're the ones responsible for
+            //      handling the scroll of the screen. Terminals in Alternate (Full) Screen Modes just
+            //      sends an Up/Down array key press events to the application in this situation.
+            // terminal.puts(InfoCmp.Capability.enter_ca_mode);
+            // terminal.puts(InfoCmp.Capability.clear_screen);
+            // terminal.flush();
 
             logger.atDebug()
                     .addKeyValue("class", terminal.getClass().getSimpleName())
@@ -160,7 +163,7 @@ public class Repl implements Runnable {
 
             // Note: The try-with-resources block automatically calls terminal.close(),
             // but explicitly emitting exit_ca_mode handles clean UI restoration.
-            System.out.print("\033[?1049l"); // Standard fallback ANSI escape to leave alt screen
+            //System.out.print("\033[?1049l"); // Standard fallback ANSI escape to leave alt screen
             System.out.flush();
         }
     }
