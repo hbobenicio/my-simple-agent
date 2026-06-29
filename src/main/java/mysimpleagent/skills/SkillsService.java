@@ -1,5 +1,6 @@
 package mysimpleagent.skills;
 
+import mysimpleagent.App;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class SkillsService {
 
@@ -30,26 +32,34 @@ public class SkillsService {
                       logger.atInfo()
                               .addKeyValue("path", path.toString())
                               .log("skill found");
-//                      try {
-//                          String content = Files.readString(path);
-//                          System.out.println(content);
-//                      } catch (IOException e) {
-//                          logger.error("Error reading file: {}", path, e);
-//                      }
-                      var skillName = path.getParent().getFileName().toString();
-                      String description = null;
-                      try {
-                          String skillContent = Files.readString(path);
 
+                      var skillName = path.getParent().getFileName().toString();
+
+                      final String skillContent;
+                      try {
+                          skillContent = Files.readString(path);
 
                       } catch (IOException e) {
                           logger.atError()
                                   .addKeyValue("path", path.toString())
                                   .setCause(e)
                                   .log("skill spec could not be read");
+                          return;
                       }
-
-//                      var skill = new SkillSpec(skillName, path, description);
+                      var skillParser = new SkillSpecParser(skillContent, App.getContext().getYamlObjectMapper());
+                      Optional<SkillSpec> maybeSkillSpec = skillParser.parse();
+                      maybeSkillSpec.ifPresent(skill -> {
+                          skill.setPath(path);
+                          if (!skill.getName().equals(skillName)) {
+                              logger.atWarn()
+                                      .addKeyValue("path", path.toString())
+                                      .addKeyValue("frontmatterSkillName", skill.getName())
+                                      .addKeyValue("fileSkillName", skillName)
+                                      .log("skill names mismatch. ignoring it");
+                              return;
+                          }
+                          skills.add(skill);
+                      });
                   });
         } catch (IOException e) {
             logger.error("Error traversing directory: {}", SKILLS_PROJECT_DIR, e);

@@ -12,6 +12,8 @@ import mysimpleagent.llm.chatcompletions.payloads.stream.LLMChatCompletionsStrea
 import mysimpleagent.llm.chatcompletions.payloads.stream.LLMChatCompletionsStreamChoiceDeltaToolCallFunction;
 import mysimpleagent.llm.models.payloads.LLMModelListItem;
 import mysimpleagent.llm.models.payloads.LLMModelListResponse;
+import mysimpleagent.skills.SkillSpec;
+import mysimpleagent.skills.SkillsService;
 import org.jline.terminal.Terminal;
 import org.jline.utils.AttributedStyle;
 import org.slf4j.Logger;
@@ -48,15 +50,17 @@ public class LLMService {
     private final ObjectMapper objectMapper;
     private final Config config;
     private final List<Object> tools;
+    private final SkillsService skillsService;
     private final LLMChatCompletionsStreamResponseParser respParser;
     private final Terminal terminal;
 
-    public LLMService(HttpClient llmClient, List<Object> tools, LLMChatCompletionsStreamResponseParser respParser) {
+    public LLMService(HttpClient llmClient, List<Object> tools, SkillsService skillsService, LLMChatCompletionsStreamResponseParser respParser) {
         this.llmClient = llmClient;
-        this.objectMapper = App.getContext().getObjectMapper();
+        this.objectMapper = App.getContext().getJsonObjectMapper();
         this.config = App.getContext().getConfig();
         this.terminal = App.getContext().getTerminal();
         this.tools = tools;
+        this.skillsService = skillsService;
         this.respParser = respParser;
     }
 
@@ -81,8 +85,11 @@ public class LLMService {
 
         String agentsContent = null;
         try {
-            agentsContent = Files.readString(Path.of("AGENTS.md"));
-            logger.atDebug().log("AGENTS.md loaded successfully");
+            var agentsPath = Path.of("AGENTS.md");
+            agentsContent = Files.readString(agentsPath);
+            logger.atInfo()
+                    .addKeyValue("path", agentsPath)
+                    .log("AGENTS.md loaded");
         } catch (NoSuchFileException ignored) {
             // casual condition. no need to log the exception
             logger.atDebug().log("AGENTS.md not found");
@@ -93,8 +100,20 @@ public class LLMService {
             systemPrompt += "\n<AGENTS.md>\n" + agentsContent + "</AGENTS.md>\n";
         }
 
-        //TODO search for skills. get their frontmatters. add them to the system message
-        
+        // Skills
+        List<SkillSpec> skillSpecs = skillsService.loadAll();
+        if (!skillSpecs.isEmpty()) {
+            StringBuilder sb = new StringBuilder(512);
+            sb.append("\nYour available skills you can activate are:\n");
+            sb.append("<Skills>\n");
+            for (int i = 0; i < skillSpecs.size(); i++) {
+                sb.append("---\n");
+                sb.append(skillSpecs.get(i).toString());
+                sb.append("\n");
+            }
+            sb.append("---\n</Skills>\n");
+            systemPrompt += sb.toString();
+        }
 
         var systemMessage = new ChatCompletionMessageParam.ChatCompletionSystemMessageParam(systemPrompt);
         messages.add(systemMessage);
@@ -253,7 +272,14 @@ public class LLMService {
                                 currentToolCall = toolCall;
                             }
 
-                            this.terminal.writer().printf("[%s] \uD83D\uDD28 %s ", toolCall.id(), toolCall.function().name());
+                            var toolEmoji = switch (toolCall.function().name()) {
+                                case "write" -> "\uD83D\uDCDD";
+                                case "read" -> "\uD83D\uDCD6";
+                                case "bash" -> "\uD83D\uDDD6";
+                                case "skill" -> "⚡";
+                                default -> "\uD83D\uDEE0\uFE0F";
+                            };
+                            this.terminal.writer().printf("[%s] %s %s ", toolCall.id(), toolEmoji, toolCall.function().name());
                             this.terminal.flush();
                         } else {
                             this.terminal.writer().print(toolCall.function().arguments());

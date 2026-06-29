@@ -6,9 +6,9 @@ import mysimpleagent.llm.LLMService;
 import mysimpleagent.llm.chatcompletions.ChatResponse;
 import mysimpleagent.llm.chatcompletions.LLMChatCompletionsStreamResponseParser;
 import mysimpleagent.llm.chatcompletions.payloads.ChatCompletionMessageParam;
-import mysimpleagent.skills.SkillSpec;
 import mysimpleagent.skills.SkillsService;
 import mysimpleagent.tools.ToolService;
+import mysimpleagent.tools.functions.ToolSkill;
 import mysimpleagent.tools.ToolsLoader;
 import mysimpleagent.tools.Toolset;
 import mysimpleagent.tools.functions.ToolBash;
@@ -24,7 +24,9 @@ import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
-import org.jline.utils.InfoCmp;
+import org.jline.utils.AttributedStringBuilder;
+import org.jline.utils.AttributedStyle;
+import org.jline.utils.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,16 +51,21 @@ public class Repl implements Runnable {
             // terminal.puts(InfoCmp.Capability.enter_ca_mode);
             // terminal.puts(InfoCmp.Capability.clear_screen);
             // terminal.flush();
-
             logger.atDebug()
                     .addKeyValue("class", terminal.getClass().getSimpleName())
                     .addKeyValue("type", terminal.getType())
                     .log("terminal provider autoconfigured");
 
-            //NOTE LineReader is not thread-safe
+            //NOTE LineReader is NOT thread-safe
             LineReader reader = LineReaderBuilder.builder()
                     .terminal(terminal)
                     .build();
+
+            // https://jline.org/versions/4.0/docs/advanced/interactive-features#status-line
+            Status status = Status.getStatus(terminal);
+            if (status == null) {
+                throw new IllegalStateException("status line is null");
+            }
 
             // Prompter is the object capable of inquiring the user interactively for choices
             //
@@ -66,95 +73,7 @@ public class Repl implements Runnable {
             // prompt execution should be performed on a single thread due to terminal I/O constraints
             Prompter prompter = PrompterFactory.create(terminal);
 
-            // Tool Specs
-            var toolsLoader = new ToolsLoader(App.getContext().getObjectMapper());
-            List<Object> tools = toolsLoader.loadToolsFromResources();
-
-            // Tools Implementors
-            var toolWrite = new ToolWrite(App.getContext().getObjectMapper());
-            var toolRead = new ToolRead(App.getContext().getObjectMapper());
-            var toolBash = new ToolBash(App.getContext().getObjectMapper());
-            var toolset = new Toolset(toolWrite, toolRead, toolBash);
-            var toolService = new ToolService(toolset);
-
-            // Skills
-            var skillsService = new SkillsService();
-            List<SkillSpec> skillSpecs = skillsService.loadAll();
-
-            var respStreamParser = new LLMChatCompletionsStreamResponseParser(App.getContext().getObjectMapper());
-
-            HttpClient llmHttpClient = llmHttpClientCreate();
-
-            var llmService = new LLMService(llmHttpClient, tools, respStreamParser);
-            selectModel(llmService, App.getContext().getConfig(), prompter);
-
-            List<ChatCompletionMessageParam> messages = llmService.newConversation();
-
-            // Main Agentic Loop
-            while (true) {
-                var ps1 = String.format("[%s] >>> ", App.getContext().getSelectedModelName());
-
-                //TODO improve exception handling
-                final String prompt;
-                try {
-                    prompt = reader.readLine(ps1).trim();
-                } catch (UserInterruptException e) {
-                    // user pressed ctrl+c
-                    // intentionally ignoring the exception
-                    logger.atDebug().log("ctrl-c captured");
-                    continue;
-                } catch (EndOfFileException e) {
-                    // user pressed ctrl+d
-                    // intentionally ignoring the exception
-                    logger.atDebug().log("ctrl-d captured. stopping the application..");
-                    break;
-                }
-
-                //TODO improve slash commands parsing
-
-                if (prompt.isEmpty()) {
-                    continue;
-                }
-
-                if (prompt.equals("/exit") || prompt.equals("/quit") || prompt.equals("/q")) {
-                    break;
-                }
-
-                if (prompt.equals("/new") || prompt.equals("/clear")) {
-                    messages = llmService.newConversation();
-                    continue;
-                }
-
-                if (prompt.equals("/models")) {
-                    selectModel(llmService, App.getContext().getConfig(), prompter);
-                    continue;
-                }
-
-                ChatResponse chatResponse;
-                try {
-                    chatResponse = llmService.chat(messages, prompt);
-                } catch (Exception e) {
-                    logger.atError().setCause(e).log("chat failed");
-                    continue;
-                }
-
-                //TODO implement loop limit
-                while (chatResponse.hasToolCalls()) {
-                    ConfirmResult confirmResult = promptToConfirmToolExecution(prompter);
-                    if (!confirmResult.isConfirmed()) {
-                        //TODO check if we need to add something in the chat if the tool use is disallowed
-                        break;
-                    }
-
-                    try {
-                        toolService.callTools(messages, chatResponse.toolCalls());
-                        chatResponse = llmService.chatToolsBack(messages);
-                    } catch (Exception e) {
-                        //TODO improve this?
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
+            start(prompter, status, reader);
         } catch (IOException | InterruptedException e) {
             //TODO improve this?
             throw new RuntimeException(e);
@@ -165,6 +84,112 @@ public class Repl implements Runnable {
             // but explicitly emitting exit_ca_mode handles clean UI restoration.
             //System.out.print("\033[?1049l"); // Standard fallback ANSI escape to leave alt screen
             System.out.flush();
+        }
+    }
+
+    private static void start(Prompter prompter, Status status, LineReader reader) throws IOException, InterruptedException {
+        // Tool Specs
+        var toolsLoader = new ToolsLoader(App.getContext().getJsonObjectMapper());
+        List<Object> toolSpecs = toolsLoader.loadToolsFromResources();
+
+        // Tools Implementors
+        var toolWrite = new ToolWrite(App.getContext().getJsonObjectMapper());
+        var toolRead = new ToolRead(App.getContext().getJsonObjectMapper());
+        var toolBash = new ToolBash(App.getContext().getJsonObjectMapper());
+        var toolSkill = new ToolSkill(App.getContext().getJsonObjectMapper());
+        var toolset = new Toolset(toolWrite, toolRead, toolBash, toolSkill);
+        var toolService = new ToolService(toolset);
+
+        var respStreamParser = new LLMChatCompletionsStreamResponseParser(App.getContext().getJsonObjectMapper());
+
+        HttpClient llmHttpClient = llmHttpClientCreate();
+
+        var skillsService = new SkillsService();
+
+        var llmService = new LLMService(llmHttpClient, toolSpecs, skillsService, respStreamParser);
+        selectModel(llmService, App.getContext().getConfig(), prompter);
+
+        List<ChatCompletionMessageParam> messages = llmService.newConversation();
+
+        // Main Agentic Loop
+        while (true) {
+            // Update the status line
+            status.update(Collections.singletonList(new AttributedStringBuilder()
+                    .style(AttributedStyle.DEFAULT.foreground(AttributedStyle.BLUE))
+                    .append(App.getContext().getConfig().getLlmBaseUrl())
+                    .style(AttributedStyle.DEFAULT.foreground(AttributedStyle.WHITE))
+                    .append(" | ")
+                    .style(AttributedStyle.DEFAULT.foreground(AttributedStyle.GREEN))
+                    .append(App.getContext().getSelectedModelName())
+                    .toAttributedString()));
+
+            var ps1 = String.format("[%s] >>> ", App.getContext().getSelectedModelName());
+
+            //TODO improve exception handling
+            final String prompt;
+            try {
+                prompt = reader.readLine(ps1).trim();
+            } catch (UserInterruptException e) {
+                // user pressed ctrl+c
+                // intentionally ignoring the exception
+                logger.atDebug().log("ctrl-c captured");
+                continue;
+            } catch (EndOfFileException e) {
+                // user pressed ctrl+d
+                // intentionally ignoring the exception
+                logger.atDebug().log("ctrl-d captured. stopping the application..");
+
+                //TODO move this to a try-finally block. Didn't worked though...
+                // status.reset();
+                // status.close();
+                // terminal.flush();
+                break;
+            }
+
+            //TODO improve slash commands parsing
+
+            if (prompt.isEmpty()) {
+                continue;
+            }
+
+            if (prompt.equals("/exit") || prompt.equals("/quit") || prompt.equals("/q")) {
+                break;
+            }
+
+            if (prompt.equals("/new") || prompt.equals("/clear")) {
+                messages = llmService.newConversation();
+                continue;
+            }
+
+            if (prompt.equals("/models")) {
+                selectModel(llmService, App.getContext().getConfig(), prompter);
+                continue;
+            }
+
+            ChatResponse chatResponse;
+            try {
+                chatResponse = llmService.chat(messages, prompt);
+            } catch (Exception e) {
+                logger.atError().setCause(e).log("chat failed");
+                continue;
+            }
+
+            //TODO implement loop limit
+            while (chatResponse.hasToolCalls()) {
+                boolean toolExecutionConfirmed = promptToConfirmToolExecution(prompter);
+                if (!toolExecutionConfirmed) {
+                    //TODO check if we need to add something in the chat if the tool use is disallowed
+                    break;
+                }
+
+                try {
+                    toolService.callTools(messages, chatResponse.toolCalls());
+                    chatResponse = llmService.chatToolsBack(messages);
+                } catch (Exception e) {
+                    //TODO improve this?
+                    throw new RuntimeException(e);
+                }
+            }
         }
     }
 
@@ -191,7 +216,6 @@ public class Repl implements Runnable {
         }
         var promptResults = prompter.prompt(Collections.emptyList(), b.addPrompt().build());
 
-//        return (ChoiseResult) promptResults.get(promptName);
         return promptResults.get(promptName).getResult();
     }
 
@@ -204,16 +228,21 @@ public class Repl implements Runnable {
                 .build();
     }
 
-    private static ConfirmResult promptToConfirmToolExecution(Prompter prompter) throws IOException {
+    private static boolean promptToConfirmToolExecution(Prompter prompter) throws IOException {
+        return promptConfirmation(prompter, "Confirm the execution of the tool above?", true);
+    }
+
+    private static boolean promptConfirmation(Prompter prompter, String message, boolean defaultValue) throws IOException {
         var promptName = "confirm";
         var promptResults = prompter.prompt(Collections.emptyList(), prompter.newBuilder()
                 .createConfirmPrompt()
                 .name(promptName)
-                .message("Confirm the execution of the tool above?")
-                .defaultValue(true)
+                .message(message)
+                .defaultValue(defaultValue)
                 .addPrompt()
                 .build());
-        return (ConfirmResult) promptResults.get(promptName);
+        var confirmResult = (ConfirmResult) promptResults.get(promptName);
+        return confirmResult.isConfirmed();
     }
 
     private static Terminal terminalCreate() {

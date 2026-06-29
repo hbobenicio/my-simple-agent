@@ -14,7 +14,8 @@ import java.util.concurrent.ExecutorService;
 public class AppContext {
     private ExecutorService executor;
     private Config config;
-    private ObjectMapper objectMapper;
+    private ObjectMapper jsonObjectMapper;
+    private ObjectMapper yamlObjectMapper;
     private Terminal terminal;
     private List<String> llmModelList;
     private String selectedModelName;
@@ -37,12 +38,12 @@ public class AppContext {
         this.config = config;
     }
 
-    public ObjectMapper getObjectMapper() {
-        return objectMapper;
+    public ObjectMapper getJsonObjectMapper() {
+        return jsonObjectMapper;
     }
 
-    public void setObjectMapper(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+    public void setJsonObjectMapper(ObjectMapper jsonObjectMapper) {
+        this.jsonObjectMapper = jsonObjectMapper;
     }
 
     public Terminal getTerminal() {
@@ -67,5 +68,13 @@ public class AppContext {
 
     public void setSelectedModelName(String selectedModelName) {
         this.selectedModelName = selectedModelName;
+    }
+
+    public ObjectMapper getYamlObjectMapper() {
+        return yamlObjectMapper;
+    }
+
+    public void setYamlObjectMapper(ObjectMapper yamlObjectMapper) {
+        this.yamlObjectMapper = yamlObjectMapper;
     }
 }

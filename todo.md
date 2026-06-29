@@ -10,7 +10,7 @@
 8. [-] Simplify payload and streaming events models
 9. [X] List models and ask the user to pick one
 10. [X] Add support for AGENTS.md
-16. [-] Add Skills (.agent/skills/SKILL.md)
+16. [X] Add Skills (.agent/skills/SKILL.md)
 11. [ ] Add tool Ask
 12. [ ] Add tool Plan
 13. [ ] Add tool Edit

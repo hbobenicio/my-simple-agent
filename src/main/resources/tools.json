@@ -4,11 +4,11 @@
     "function": {
       "name": "read",
       "description": "Read the contents of a file. Supports text files only. Images are not supported. For text files, output is truncated to ${DEFAULT_MAX_LINES} lines or ${DEFAULT_MAX_BYTES / 1024}KB (whichever is hit first). Use offset/limit for large files. When you need the full file, continue with offset until complete.",
+      "strict": false,
       "parameters": {
         "type": "object",
-        "required": [
-          "path"
-        ],
+        "required": [ "path" ],
+        "additionalProperties": false,
         "properties": {
           "path": {
             "type": "string",
@@ -23,8 +23,7 @@
             "description": "Maximum number of lines to read"
           }
         }
-      },
-      "strict": false
+      }
     }
   },
   {
@@ -32,11 +31,11 @@
     "function": {
       "name": "bash",
       "description": "Execute a bash command in the current working directory. Returns stdout and stderr. Output is truncated to last ${DEFAULT_MAX_LINES} lines or ${DEFAULT_MAX_BYTES / 1024}KB (whichever is hit first). If truncated, full output is saved to a temp file. Optionally provide a timeout in seconds.",
+      "strict": false,
       "parameters": {
         "type": "object",
-        "required": [
-          "command"
-        ],
+        "required": [ "command" ],
+        "additionalProperties": false,
         "properties": {
           "command": {
             "type": "string",
@@ -47,8 +46,7 @@
             "description": "Timeout in seconds (optional, no default timeout)"
           }
         }
-      },
-      "strict": false
+      }
     }
   },
   {
@@ -56,12 +54,11 @@
     "function": {
       "name": "write",
       "description": "Write content to a file. Creates the file if it doesn't exist, overwrites if it does. Automatically creates parent directories.",
+      "strict": false,
       "parameters": {
         "type": "object",
-        "required": [
-          "path",
-          "content"
-        ],
+        "required": [ "path", "content" ],
+        "additionalProperties": false,
         "properties": {
           "path": {
             "type": "string",
@@ -72,8 +69,26 @@
             "description": "Content to write to the file"
           }
         }
-      },
-      "strict": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "skill",
+      "description": "Dynamically activates a skill from a SKILL.md file path",
+      "strict": false,
+      "parameters": {
+        "type": "object",
+        "required": [ "path" ],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Path to the SKILL.md file to be activated"
+          }
+        }
+      }
     }
   }
 ]

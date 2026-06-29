@@ -7,6 +7,7 @@ import mysimpleagent.repl.Repl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -83,8 +84,11 @@ public class App {
         CONTEXT.setConfig(config);
 
         // Jackson's JSON encoder/decoder
-        var objectMapper = new ObjectMapper();
-        CONTEXT.setObjectMapper(objectMapper);
+        var jsonObjectMapper = new ObjectMapper();
+        CONTEXT.setJsonObjectMapper(jsonObjectMapper);
+
+        var yamlObjectMapper = new YAMLMapper();
+        CONTEXT.setYamlObjectMapper(yamlObjectMapper);
     }
 
     private static ExecutorService createVirtualThreadExecutorService() {

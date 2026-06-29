@@ -9,21 +9,24 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class ToolRead implements Tool {
+public class ToolSkill implements Tool {
 
+    /// Arguments of the `bash` tool
+    ///
+    /// @param path The SKILL.md file path
     private record Args(String path) {}
 
-    private static final Logger logger = LoggerFactory.getLogger(ToolRead.class.getSimpleName());
+    private static final Logger logger = LoggerFactory.getLogger(ToolSkill.class.getSimpleName());
 
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper jsonObjectMapper;
 
-    public ToolRead(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+    public ToolSkill(ObjectMapper jsonObjectMapper) {
+        this.jsonObjectMapper = jsonObjectMapper;
     }
 
     @Override
     public String getName() {
-        return "read";
+        return "skill";
     }
 
     @Override
@@ -32,19 +35,20 @@ public class ToolRead implements Tool {
                 .addKeyValue("tool", getName())
                 .addKeyValue("args", argsString)
                 .log("tool executing...");
-        Args args = objectMapper.readValue(argsString, Args.class);
+        ToolSkill.Args args = jsonObjectMapper.readValue(argsString, ToolSkill.Args.class);
         try {
             String fileContents = Files.readString(Path.of(args.path));
-            return String.format("read tool success: the content of the file \"%s\" is\n%s", args.path, fileContents);
+            //TODO consider truncating the frontmatter (it's already in the context...)
+            return String.format("skill tool success: the content of the file \"%s\" is\n%s", args.path, fileContents);
         } catch (IOException e) {
             logger.atError()
                     .addKeyValue("tool", getName())
                     .addKeyValue("args", argsString)
                     .setCause(e)
-                    .log("tool read failed");
+                    .log("tool skill failed");
             // should the LLM know all the root causes of it???
             //TODO consider sending the full stacktrace back to the LLM
-            return String.format("error: read tool failed for path \"%s\": %s", args.path, e.getMessage());
+            return String.format("error: skill tool failed for path \"%s\": %s", args.path, e.getMessage());
         }
     }
 }
