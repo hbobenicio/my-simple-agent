@@ -7,7 +7,6 @@ import br.com.hbobenicio.mysimpleagent.llm.chatcompletions.ChatResponse;
 import br.com.hbobenicio.mysimpleagent.llm.chatcompletions.LLMChatCompletionsStreamResponseParser;
 import br.com.hbobenicio.mysimpleagent.llm.chatcompletions.TokenUsagePrinter;
 import br.com.hbobenicio.mysimpleagent.llm.chatcompletions.payloads.*;
-import mysimpleagent.llm.chatcompletions.payloads.*;
 import br.com.hbobenicio.mysimpleagent.llm.chatcompletions.payloads.stream.ChatCompletionStreamResponseEvent;
 import br.com.hbobenicio.mysimpleagent.llm.chatcompletions.payloads.stream.LLMChatCompletionsStreamChoiceDeltaToolCall;
 import br.com.hbobenicio.mysimpleagent.llm.chatcompletions.payloads.stream.LLMChatCompletionsStreamChoiceDeltaToolCallFunction;
