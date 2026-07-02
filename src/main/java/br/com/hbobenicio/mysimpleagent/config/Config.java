@@ -35,7 +35,7 @@ public class Config {
     }
 
     private static String load(String key, String defaultValue, boolean redacted) {
-        Optional<String> maybeValue = Optional.ofNullable(System.getProperty(key))
+        Optional<String> maybeValue = Optional.ofNullable(System.getenv(key))
                 .filter(s -> !s.isBlank())
                 .map(String::trim);
 
