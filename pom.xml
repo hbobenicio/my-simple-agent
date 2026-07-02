@@ -87,6 +87,7 @@
     </dependencies>
 
     <build>
+        <finalName>${project.name}</finalName>
         <plugins>
             <!-- Maven Compiler Plugin for Java 25 -->
             <plugin>
